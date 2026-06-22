@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feedback</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #e9f1e8, #f4f6f3);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAVBAR MODERNA */
+    .top-nav {
+      background: linear-gradient(135deg, #3A6351, #2f4f3a);
+      padding: 18px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      flex-wrap: wrap;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+
+    .top-nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      transition: 0.3s;
+    }
+
+    .top-nav a:hover,
+    .top-nav a.active {
+      background: #558b2f;
+      transform: translateY(-2px);
+    }
+
+    .voltar-servicos {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 14px;
+      border-radius: 10px;
+    }
+
+    /* CARD CENTRAL */
+    main.container {
+      max-width: 650px;
+      margin: 60px auto;
+      background: white;
+      padding: 40px 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    h2 {
+      font-size: 2.2rem;
+      color: #3A6351;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    /* FORM */
+    label {
+      display: block;
+      text-align: left;
+      font-weight: 600;
+      margin: 10px 0 5px;
+      color: #3A6351;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #d6e2d6;
+      outline: none;
+      font-size: 1rem;
+      transition: 0.3s;
+      background: #f9fbf9;
+    }
+
+    .form-control:focus {
+      border-color: #558b2f;
+      box-shadow: 0 0 8px rgba(85,139,47,0.3);
+      background: white;
+    }
+
+    /* BOTÃO */
+    button.btn-success {
+      width: 100%;
+      margin-top: 20px;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #558b2f, #3A6351);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 6px 15px rgba(85,139,47,0.3);
+    }
+
+    button.btn-success:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(85,139,47,0.4);
+    }
+
+    /* ERRO */
+    .invalid-feedback {
+      display: none;
+      font-size: 0.85rem;
+      color: #d9534f;
+      text-align: left;
+    }
+
+    .is-invalid {
+      border-color: #d9534f !important;
+    }
+
+    .is-invalid + .invalid-feedback {
+      display: block;
+    }
+
+    /* SUCESSO */
+    #feedbackSucesso {
+      margin-top: 20px;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: auto;
+      background: #3A6351;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav class="top-nav">
+    <a href="index.html">Home</a>
+    <a href="servicos.html" class="voltar-servicos">Voltar</a>
+  </nav>
+
+  <!-- FORM CARD -->
+  <main class="container">
+    <h2>Feedback 📝🌿</h2>
+    <p>Ajude-nos a melhorar a experiência no site</p>
+
+    <form id="formFeedback" novalidate>
+
+      <label>Nome</label>
+      <input type="text" id="nome" class="form-control" placeholder="Seu nome" />
+      <div class="invalid-feedback">Informe seu nome</div>
+
+      <label>E-mail</label>
+      <input type="email" id="email" class="form-control" placeholder="exemplo@email.com" />
+      <div class="invalid-feedback">Informe um e-mail válido</div>
+
+      <label>Mensagem</label>
+      <textarea id="mensagem" class="form-control" rows="5" placeholder="Escreva sua mensagem"></textarea>
+      <div class="invalid-feedback">Escreva uma mensagem</div>
+
+      <button type="submit" class="btn-success">Enviar Feedback</button>
+
+    </form>
+
+    <div id="feedbackSucesso"></div>
+  </main>
+
+  
+
+  <script>
+    document.getElementById('formFeedback').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome');
+      const email = document.getElementById('email');
+      const mensagem = document.getElementById('mensagem');
+      const feedback = document.getElementById('feedbackSucesso');
+
+      let valido = true;
+      feedback.textContent = '';
+
+      if (!nome.value.trim()) {
+        nome.classList.add('is-invalid');
+        valido = false;
+      } else {
+        nome.classList.remove('is-invalid');
+      }
+
+      const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email.value.trim() || !regex.test(email.value)) {
+        email.classList.add('is-invalid');
+        valido = false;
+      } else {
+        email.classList.remove('is-invalid');
+      }
+
+      if (!mensagem.value.trim()) {
+        mensagem.classList.add('is-invalid');
+        valido = false;
+      } else {
+        mensagem.classList.remove('is-invalid');
+      }
+
+      if (valido) {
+        feedback.textContent = "✅ Feedback enviado com sucesso!";
+        nome.value = "";
+        email.value = "";
+        mensagem.value = "";
+      }
+    });
+  </script>
+
+</body>
+</html>

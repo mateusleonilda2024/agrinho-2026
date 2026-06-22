@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroEvo Pro - Painel de Gestão Sustentável</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        :root {
+            --primary: #1b4332;
+            --primary-light: #52b788;
+            --bg: #f8faf9;
+            --text: #2d3748;
+            --text-muted: #718096;
+            --card-bg: #ffffff;
+            --border: #edf2f7;
+            --panel-ph: #a0aec0;
+            --map-filter: none;
+        }
+
+        /* Variáveis do Modo Escuro */
+        [data-theme="dark"] {
+            --primary: #0f261c;
+            --primary-light: #40916c;
+            --bg: #121214;
+            --text: #e2e8f0;
+            --text-muted: #a0aec0;
+            --card-bg: #1a1a1e;
+            --border: #2d2d34;
+            --panel-ph: #4a5568;
+            --map-filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(1.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-top: 85px;
+            padding-bottom: 60px;
+        }
+
+        /* NAVBAR MODERNA */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background-color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 5%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            z-index: 1000;
+        }
+
+        .navbar .logo {
+            color: #ffffff;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar .logo span { color: var(--primary-light); }
+        
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .navbar ul { display: flex; list-style: none; gap: 30px; }
+        .navbar ul a {
+            color: #d8f3dc;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding-bottom: 6px;
+        }
+        .navbar ul a:hover, .navbar ul a.active {
+            color: #ffffff;
+            border-bottom: 3px solid var(--primary-light);
+        }
+
+        /* Botão Dark Mode */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* LAYOUT CONTAINER */
+        .main-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* SEÇÃO DE PROPÓSITO E ESTATÍSTICAS */
+        .intro-section {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+            margin-bottom: 35px;
+        }
+
+        .purpose-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            border-left: 6px solid var(--primary-light);
+        }
+
+        .purpose-box h2 {
+            color: var(--primary-light);
+            font-size: 1.7rem;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        .purpose-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid var(--border);
+        }
+        .stat-card.full-width { grid-column: span 2; }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-light);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* CARROSSEL DE IMAGENS MODERNO */
+        .carousel-container {
+            width: 100%;
+            height: 220px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 35px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.05);
+        }
+
+        .carousel-slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .carousel-slide.active { opacity: 1; }
+
+        .carousel-caption {
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+            width: 100%;
+            padding: 30px 40px;
+            color: white;
+        }
+
+        .carousel-caption h3 { font-size: 1.4rem; margin-bottom: 5px; font-weight: 700;}
+        .carousel-caption p { font-size: 0.95rem; opacity: 0.9; }
+
+        /* SIMULADOR / DASHBOARD */
+        .dashboard {
+            display: flex;
+            gap: 25px;
+            background: var(--card-bg);
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+
+        .status-bar-container { flex: 1; }
+        .status-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .status-bar {
+            width: 100%;
+            height: 16px;
+            background: var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .status-fill {
+            height: 100%;
+            width: 40%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #fill-prod { background: linear-gradient(90deg, #ed8936, #ecc94b); }
+        #fill-sust { background: linear-gradient(90deg, #48bb78, #38a169); }
+
+        /* JOGO/MAPA PRINCIPAL */
+        .game-screen {
+            display: flex;
+            gap: 25px;
+            height: 550px;
+            margin-bottom: 20px;
+        }
+
+        #map {
+            flex: 1.8;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+            border: none;
+            z-index: 1;
+        }
+
+        /* Filtro Dark para os tiles do Leaflet */
+        .leaflet-tile-container {
+            filter: var(--map-filter);
+        }
+
+        .control-panel {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-top: 6px solid var(--primary-light);
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-placeholder {
+            text-align: center;
+            color: var(--panel-ph);
+            margin: auto;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .panel-content h3 {
+            color: var(--text);
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+            font-weight: 800;
+        }
+
+        .badge-tipo {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(82, 183, 136, 0.15);
+            color: var(--primary-light);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .panel-content p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        .feedback-box {
+            background: rgba(0,0,0,0.02);
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 0.9rem;
+            border-left: 4px solid var(--panel-ph);
+            margin-bottom: 25px;
+        }
+        [data-theme="dark"] .feedback-box { background: rgba(255,255,255,0.03); }
+        .feedback-box strong { display: block; margin-bottom: 4px; color: var(--text); }
+
+        .upgrade-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-activate { background: var(--primary-light); color: white; }
+        .btn-activate:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-deactivate { background: #e53e3e; color: white; }
+        .btn-deactivate:hover { background: #c53030; }
+
+        .hidden { display: none !important; }
+
+        /* MARCADORES MAPA */
+        .custom-marker {
+            background: var(--card-bg);
+            border: 2px solid var(--primary-light);
+            color: var(--text);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 38px;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .custom-marker:hover { transform: scale(1.2) rotate(10deg); background: var(--primary-light); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="logo">Agro<span>Evo</span></div>
+        <div class="nav-right">
+            <ul>
+                <li><a href="servicos.html" class="active">Simulador</a></li>
+                <li><a href="feedback.html">Enviar Feedback</a></li>
+            </ul>
+            <button class="theme-toggle" onclick="toggleTheme()" id="theme-btn">🌙 Modo Escuro</button>
+        </div>
+    </nav>
+
+    <div class="main-container">
+
+        <!-- PROPÓSITO E ESTATÍSTICAS -->
+        <section class="intro-section">
+            <div class="purpose-box">
+                <h2>O Propósito</h2>
+                <p>O AgroEvo Pro foi desenhado para provar que a alta produtividade agrícola e a conservação ambiental não são caminhos opostos, mas sim complementares. Através deste ecossistema simulado por georreferenciamento de satélite, você assume a tomada de decisões estratégicas para mitigar riscos climáticos e otimizar a rentabilidade do campo de forma sustentável.</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">30%</div>
+                    <div class="stat-label">Economia de Insumos via IoT</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">+18%</div>
+                    <div class="stat-label">Ganho de Solo Vivo</div>
+                </div>
+                <div class="stat-card full-width">
+                    <div class="stat-number">0%</div>
+                    <div class="stat-label">Desmatamento Ilegal Tolerado</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CARROSSEL DE IMAGENS -->
+        <section class="carousel-container">
+            <div class="carousel-slide active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=1200&q=80');">
+                <div class="carousel-caption">
+                    <h3>Tecnologia Avançada de Campo</h3>
+                    <p>O monitoramento aéreo reduz o impacto químico nas bacias hidrográficas.</p>
+                </div>
+            </div>
+            <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80');">
+                <div class="carousel-caption">
+                    <h3>Preservação e Corredores Verdes</h3>
+                    <p>Florestas ciliares ativas mantêm o ciclo hídrico saudável em períodos de seca extrema.</p>
+                </div>
+            </div>
+            <div class="carousel-slide" style="background-image: url('https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1200&q=80');">
+                <div class="carousel-caption">
+                    <h3>Descarbonização Total</h3>
+                    <p>A captação e conversão de energia solar reduz o consumo de combustíveis fósseis na fazenda.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD DE MÉTRICAS -->
+        <div class="dashboard">
+            <div class="status-bar-container">
+                <div class="status-label">
+                    <span>⚡ PRODUTIVIDADE OPERACIONAL</span>
+                    <span id="score-prod-txt">40%</span>
+                </div>
+                <div class="status-bar"><div class="status-fill" id="fill-prod" style="width: 40%;"></div></div>
+            </div>
+            <div class="status-bar-container">
+                <div class="status-label">
+                    <span>🌱 ÍNDICE DE SUSTENTABILIDADE</span>
+                    <span id="score-sust-txt">40%</span>
+                </div>
+                <div class="status-bar"><div class="status-fill" id="fill-sust" style="width: 40%;"></div></div>
+            </div>
+        </div>
+
+        <!-- SIMULADOR MAPA -->
+        <div class="game-screen">
+            <div id="map"></div>
+            <div class="control-panel">
+                <div class="panel-placeholder" id="placeholder">
+                    <p><strong>🗺️ Central de Operações Remota</strong><br><br>Interaja com os 6 pontos táticos no mapa ao lado e selecione uma região para atualizar as diretrizes de manejo.</p>
+                </div>
+                <div class="panel-content hidden" id="content-box">
+                    <h3 id="panel-title">Carregando...</h3>
+                    <span class="badge-tipo" id="panel-tag">Categoria</span>
+                    <p id="panel-desc">Selecione uma área...</p>
+                    <div class="feedback-box">
+                        <strong>📋 Diagnóstico Técnico:</strong>
+                        <span id="panel-feedback">Análise indisponível.</span>
+                    </div>
+                    <button id="action-btn" class="upgrade-btn btn-activate" onclick="toggleUpgrade()">Implementar Diretriz</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let metrics = { prod: 40, sust: 40 };
+        let currentSelected = null;
+
+        const map = L.map('map').setView([-12.3530, -51.5510], 14); 
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri'
+        }).addTo(map);
+
+        // BANCO DE DADOS EXPANDIDO - 6 PONTOS INTERATIVOS
+        const features = {
+            reserva: {
+                title: "Reserva Legal Integrada", tag: "Meio Ambiente",
+                desc: "Reflorestamento ativo de clareiras cria corredores ecológicos que trazem predadores naturais para o controle biológico de pragas.",
+                active: false, impact: { prod: -5, sust: +20 },
+                feedback: { off: "⚠️ Risco de erosão e proliferação de pragas sem barreiras biológicas naturais.", on: "🌿 Corredores criados! Controle biológico ativo e biodiversidade preservada." },
+                coords: [-12.3450, -51.5550], icon: "🌲"
+            },
+            lavoura_norte: {
+                title: "Talhão Norte - Rotação", tag: "Produção",
+                desc: "Substituir a monocultura repetitiva pelo plantio alternado de Soja e Milho com fixadores biológicos de nitrogênio.",
+                active: false, impact: { prod: +15, sust: +15 },
+                feedback: { off: "⚠️ Solo progressivamente esgotado, exigindo dependência severa de insumos químicos sintéticos.", on: "🚜 Rotação estruturada! Nutrientes repostos naturalmente e quebra do ciclo de pragas." },
+                coords: [-12.3440, -51.5380], icon: "🌱"
+            },
+            energia: {
+                title: "Matriz Solar nos Silos", tag: "Infraestrutura",
+                desc: "Instalação de painéis fotovoltaicos na cobertura dos silos de armazenamento para cortar emissões gasosas.",
+                active: false, impact: { prod: +5, sust: +15 },
+                feedback: { off: "⚠️ Alto custo operacional e emissões elevadas vindas de geradores movidos a diesel.", on: "☀️ Autossuficiência garantida. Operação limpa movida a energia solar de ponta." },
+                coords: [-12.3600, -51.5580], icon: "☀️"
+            },
+            hidrografia: {
+                title: "Ribeirão das Almas - Proteção de Nascentes", tag: "Recursos Hídricos",
+                desc: "Cercamento de APPs de margem de rio e plantio de mudas nativas para evitar o assoreamento por enxurradas.",
+                active: false, impact: { prod: -2, sust: +25 },
+                feedback: { off: "⚠️ Gado invadindo margens e erosão contaminando o lençol freático e reduzindo vazão de água.", on: "💧 Nascentes protegidas! Qualidade e fluxo de água assegurados para as próximas décadas." },
+                coords: [-12.3580, -51.5420], icon: "💧"
+            },
+            pecuaria: {
+                title: "Pasto Sul - Integração ILPF", tag: "Pecuária Regenerativa",
+                desc: "Implementação do sistema Integração Lavoura-Pecuária-Floresta, rotacionando pastos e inserindo linhas de eucalipto para sombra.",
+                active: false, impact: { prod: +20, sust: +10 },
+                feedback: { off: "⚠️ Pastagens degradadas liberando metano em excesso e solo compactado pelo gado.", on: "🐂 Conforto térmico animal ativo! Solo recuperado pela lavoura intercalada e alta engorda por hectare." },
+                coords: [-12.3670, -51.5490], icon: "🐂"
+            },
+            logistica: {
+                title: "Centro de Distribuição Ecológico", tag: "Logística Inteligente",
+                desc: "Otimização de rotas de escoamento via software inteligente e eletrificação parcial da frota interna de tratores.",
+                active: false, impact: { prod: +10, sust: +5 },
+                feedback: { off: "⚠️ Desperdício de combustível fóssil por rotas ineficientes de transporte de grãos.", on: "📦 Logística ágil! Redução de quebras de carga e pegada de carbono drasticamente cortada." },
+                coords: [-12.3495, -51.5630], icon: "📦"
+            }
+        };
+
+        Object.keys(features).forEach(key => {
+            const feat = features[key];
+            const customIcon = L.divIcon({ html: feat.icon, className: 'custom-marker', iconSize: [40, 40], iconAnchor: [20, 20] });
+            L.marker(feat.coords, { icon: customIcon }).addTo(map).on('click', () => selectFeature(key));
+        });
+
+        function selectFeature(key) {
+            currentSelected = key;
+            const data = features[key];
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('content-box').classList.remove('hidden');
+            document.getElementById('panel-title').innerText = data.title;
+            document.getElementById('panel-tag').innerText = data.tag;
+            document.getElementById('panel-desc').innerText = data.desc;
+            updateVisuals(data);
+        }
+
+        function updateVisuals(data) {
+            const btn = document.getElementById('action-btn');
+            const feedbackEl = document.getElementById('panel-feedback');
+            const box = feedbackEl.parentElement;
+
+            if (data.active) {
+                btn.innerText = "Reverter Estratégia";
+                btn.className = "upgrade-btn btn-deactivate";
+                feedbackEl.innerText = data.feedback.on;
+                box.style.borderLeftColor = "var(--primary-light)";
+            } else {
+                btn.innerText = "Aplicar Diretriz Sustentável";
+                btn.className = "upgrade-btn btn-activate";
+                feedbackEl.innerText = data.feedback.off;
+                box.style.borderLeftColor = "#e53e3e";
+            }
+        }
+
+        function toggleUpgrade() {
+            if (!currentSelected) return;
+            const data = features[currentSelected];
+            data.active = !data.active;
+            const mult = data.active ? 1 : -1;
+
+            metrics.prod = Math.min(100, Math.max(0, metrics.prod + (data.impact.prod * mult)));
+            metrics.sust = Math.min(100, Math.max(0, metrics.sust + (data.impact.sust * mult)));
+
+            document.getElementById('fill-prod').style.width = metrics.prod + "%";
+            document.getElementById('score-prod-txt').innerText = metrics.prod + "%";
+            document.getElementById('fill-sust').style.width = metrics.sust + "%";
+            document.getElementById('score-sust-txt').innerText = metrics.sust + "%";
+
+            updateVisuals(data);
+        }
+
+        // ALTERNAR MODO ESCURO
+        function toggleTheme() {
+            const body = document.documentElement;
+            const btn = document.getElementById('theme-btn');
+            
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                btn.innerText = "🌙 Modo Escuro";
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                btn.innerText = "☀️ Modo Claro";
+            }
+        }
+
+        let slideIndex = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        
+        function rotateSlides() {
+            slides[slideIndex].classList.remove('active');
+            slideIndex = (slideIndex + 1) % slides.length;
+            slides[slideIndex].classList.add('active');
+        }
+        setInterval(rotateSlides, 4000);
+    </script>
+</body>
+</html>
